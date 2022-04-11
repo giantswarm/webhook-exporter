@@ -1,0 +1,40 @@
+replicaCount: 1
+
+installation:
+  name: name
+
+project:
+  branch: "[[ .Branch ]]"
+  commit: "[[ .SHA ]]"
+
+port: 9001
+
+image:
+  name: "giantswarm/webhook-exporter"
+  tag: "[[ .Version ]]"
+  pullPolicy: IfNotPresent
+
+registry:
+  domain: docker.io
+
+podAnnotations: {}
+
+podSecurityContext: 
+  fsGroup: 2000
+
+securityContext: 
+  runAsUser: 1000
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  port: 9001
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+

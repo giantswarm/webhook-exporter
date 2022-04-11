@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ include "resource.default.name" . }}"
+  labels:
+    {{- include "labels.common" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - core
+      - apps
+      - apiregistration.k8s.io
+      - policy
+    resources:
+      - deployments
+      - poddisruptionbudgets
+      - mutatingwebhookconfigurations
+      - services
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+    resourceNames:
+      - "{{ include "resource.default.name" . }}"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ include "resource.default.name" . }}"
+  labels:
+    {{- include "labels.common" . | nindent 4 }}
+roleRef:
+  kind: ClusterRole
+  name: "{{ include "resource.default.name" . }}"
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: "{{ include "resource.default.name" . }}"
+    namespace: {{ .Release.Namespace }}
