@@ -81,14 +81,14 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 
 //Probably a better name is scrapeWebhook
 func (r *ValidatingWebhookConfigurationReconciler) collectWebhookMetrics(ctx context.Context, logger logr.Logger, validationWebhook admissionregistrationv1.ValidatingWebhook) error {
-  webhookName := validationWebhook.Name
+	webhookName := validationWebhook.Name
 	clientConfig := validationWebhook.ClientConfig
 	serviceName := clientConfig.Service.Name
 	namespace := clientConfig.Service.Namespace
 
 	service, err := r.K8sClient.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 
-  logger.Info(fmt.Sprintf("Found the service named %s for the webhook %s", serviceName, webhookName))
+	logger.Info(fmt.Sprintf("Found the service named %s for the webhook %s", serviceName, webhookName))
 	//TODO: Handle what happens if a service isn't found. This is likely to be the case when the webhook lives outside the cluster. Zero out every metric
 	if err != nil {
 		return err
