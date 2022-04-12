@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/giantswarm/webhook-exporter/controllers"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -121,13 +120,6 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
-
-	setupLog.Info("Starting webhook metrics prometheus handler at path %s", webhookMetricsPath)
-	err = mgr.AddMetricsExtraHandler(webhookMetricsPath, promhttp.Handler())
-	if err != nil {
-		setupLog.Info("Unable to start webhook metrics prometheus handler")
 		os.Exit(1)
 	}
 

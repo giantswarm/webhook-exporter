@@ -125,7 +125,37 @@ func (r *ValidatingWebhookConfigurationReconciler) collectWebhookMetrics(ctx con
 
 	collectPDBInfo(webhookName, pdbs)
 
+	if validationWebhook.NamespaceSelector != nil {
+		logger.Info(fmt.Sprintf("Checking namespace selector for %s", webhookName))
+		matchExpressions := validationWebhook.NamespaceSelector.MatchExpressions
+		scrapeNamespaceSelector(webhookName, matchExpressions)
+	}
+
 	return nil
+}
+
+func scrapeNamespaceSelector(webhookName string, selectors []metav1.LabelSelectorRequirement) {
+	for _, selector := range selectors {
+		if selector.Key == "name" && selector.Operator == metav1.LabelSelectorOpNotIn && contains(selector.Values, "kube-system") {
+			metrics.ValidNamespaceSelectors.
+				WithLabelValues(webhookName, "Validation Webhook").Set(1)
+
+			return
+		}
+	}
+
+	metrics.ValidNamespaceSelectors.
+		WithLabelValues(webhookName, "Validation Webhook").Set(0)
+}
+
+func contains(values []string, value string) bool {
+	for _, v := range values {
+		if v == value {
+			return true
+		}
+	}
+
+	return false
 }
 
 func collectDeploymentInfo(webhookName string, deployments appsv1.DeploymentList) {

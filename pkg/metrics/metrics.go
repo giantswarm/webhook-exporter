@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 //Need a metric for the number of webhooks with not enough replicas
@@ -38,9 +39,30 @@ var (
 	)
 )
 
+var (
+	ValidNamespaceSelectors = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metricNamespace,
+			Subsystem: metricSubsystem,
+			Name:      "valid_namespace_selectors",
+			Help: `
+			   A metric showing the number of webhooks that a valid.
+			   That is webhooks that follow the folloing rules:
+			     namespaceSelector:
+			       matchExpressions:
+			       - key: name
+			         operator: NotIn
+			         values: ["kube-system"]
+			   `,
+		},
+		infoLabels,
+	)
+)
+
 func init() {
-	prometheus.MustRegister(
+	metrics.Registry.MustRegister(
 		ReplicasInfo,
 		PodDisruptionBudgetInfo,
+		ValidNamespaceSelectors,
 	)
 }
