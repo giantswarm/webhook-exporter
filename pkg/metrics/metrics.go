@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 //Need a metric for the number of webhooks with not enough replicas
@@ -40,7 +39,7 @@ var (
 )
 
 func init() {
-	metrics.Registry.MustRegister(
+	prometheus.MustRegister(
 		ReplicasInfo,
 		PodDisruptionBudgetInfo,
 	)

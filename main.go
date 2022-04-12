@@ -17,9 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
-	"net/http"
 	"os"
 	"path/filepath"
 
@@ -36,7 +34,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/giantswarm/webhook-exporter/controllers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -44,8 +41,9 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme             = runtime.NewScheme()
+	setupLog           = ctrl.Log.WithName("setup")
+	webhookMetricsPath = "webhook-metrics"
 )
 
 func init() {
@@ -102,22 +100,11 @@ func main() {
 		panic(err.Error())
 	}
 
-	err = mgr.Add(manager.RunnableFunc(func(context.Context) error {
-		// Do something
-
-		setupLog.Info("Setting up runnable")
-		http.Handle("/webhook-metrics", promhttp.Handler())
-		http.ListenAndServe(address, nil)
-		return nil
-	}))
-
-	// mgr.Add(x)
-	// mgr.AddMetricsExtraHandler()
-
 	k8sClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		setupLog.Error(err, "unable to setup kubernetes client config")
 	}
+
 	if err = (&controllers.ValidatingWebhookConfigurationReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
@@ -134,6 +121,13 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
+	setupLog.Info("Starting webhook metrics prometheus handler at path %s", webhookMetricsPath)
+	err = mgr.AddMetricsExtraHandler(webhookMetricsPath, promhttp.Handler())
+	if err != nil {
+		setupLog.Info("Unable to start webhook metrics prometheus handler")
 		os.Exit(1)
 	}
 

@@ -119,7 +119,7 @@ func (r *ValidatingWebhookConfigurationReconciler) collectWebhookMetrics(ctx con
 		logger.Error(err, fmt.Sprintf("Error getting the pod disruption bugdet for %s", webhookName))
 	}
 
-	collectPDBInfo(webhookName, *pdbs)
+	collectPDBInfo(webhookName, pdbs)
 
 	return nil
 }
@@ -137,17 +137,33 @@ func collectDeploymentInfo(webhookName string, deployments appsv1.DeploymentList
 		Set(replicas)
 }
 
-func collectPDBInfo(webhookName string, pdbs policyv1.PodDisruptionBudgetList) {
+func collectPDBInfo(webhookName string, pdbs *policyv1.PodDisruptionBudgetList) {
 	var minAvailablePods float64 = 0
 
-	if len(pdbs.Items) > 0 {
-		pdb := pdbs.Items[0]
-		minAvailablePods = float64(pdb.Spec.MinAvailable.IntVal)
+	if len(pdbs.Items) < 1 {
+		setPBDMetricValue(webhookName, minAvailablePods)
+		return
 	}
+
+	pdb := pdbs.Items[0]
+
+	if pdb.Spec.MinAvailable == nil {
+		setPBDMetricValue(webhookName, minAvailablePods)
+		return
+	}
+
+	x := pdb.Spec.MinAvailable.IntValue()
+	minAvailablePods = float64(x)
 
 	metrics.PodDisruptionBudgetInfo.
 		WithLabelValues(webhookName, "Validation Webhook").
 		Set(minAvailablePods)
+}
+
+func setPBDMetricValue(webhookName string, value float64) {
+	metrics.PodDisruptionBudgetInfo.
+		WithLabelValues(webhookName, "Validation Webhook").
+		Set(value)
 }
 
 // SetupWithManager sets up the controller with the Manager.
