@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/webhook-exporter/pkg/metrics"
@@ -76,7 +77,10 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 		r.collectWebhookMetrics(ctx, logger, validationWebhook)
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{
+		Requeue:      true,
+		RequeueAfter: time.Minute * 5,
+	}, nil
 }
 
 //Probably a better name is scrapeWebhook
