@@ -24,8 +24,6 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
-	policyv1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -61,15 +59,14 @@ type ValidatingWebhookConfigurationReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithValues("webhook", req.NamespacedName)
 
-	fmt.Println(req.Name)
 	webhookConfiguration := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 
 	err := r.Client.Get(ctx, req.NamespacedName, webhookConfiguration)
 	if apierrors.IsNotFound(err) {
 		//TODO: Set everything to 0
-
+    //TODO: Handle errors and logging properly
 		return ctrl.Result{}, err
 	}
 
@@ -84,15 +81,20 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 }
 
 //Probably a better name is scrapeWebhook
-func (r *ValidatingWebhookConfigurationReconciler) collectWebhookMetrics(ctx context.Context, logger logr.Logger, validationWebhook admissionregistrationv1.ValidatingWebhook) error {
-	webhookName := validationWebhook.Name
-	clientConfig := validationWebhook.ClientConfig
+func (r *ValidatingWebhookConfigurationReconciler) collectWebhookMetrics(ctx context.Context, logger logr.Logger, webhook admissionregistrationv1.ValidatingWebhook) error {
+	webhookName := webhook.Name
+	clientConfig := webhook.ClientConfig
 	serviceName := clientConfig.Service.Name
 	namespace := clientConfig.Service.Namespace
 
-	service, err := r.K8sClient.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
+	collector := metrics.Collector{
+		Name: webhookName,
+		Kind: "Validating",
+	}
 
+	service, err := r.K8sClient.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 	logger.Info(fmt.Sprintf("Found the service named %s for the webhook %s", serviceName, webhookName))
+
 	//TODO: Handle what happens if a service isn't found. This is likely to be the case when the webhook lives outside the cluster. Zero out every metric
 	if err != nil {
 		return err
@@ -107,97 +109,23 @@ func (r *ValidatingWebhookConfigurationReconciler) collectWebhookMetrics(ctx con
 		logger.Error(microerror.Mask(err), "Error fetching webhook deployement")
 	}
 
-	//TODO: Handle the cases where there are no deployments
-
-	//TODO: Handle cases where we have multiple deployements. If that's possible
 	logger.Info(fmt.Sprintf("Checking replicas number of replicas for %s", serviceName))
-	collectDeploymentInfo(webhookName, *deployments)
+	collector.CollectDeploymentMetrics(*deployments)
 
-	//Pod Disruption Budget
 	logger.Info(fmt.Sprintf("Checking the pod disruption budget for %s", serviceName))
 	pdbs, err := r.K8sClient.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: selector,
 	})
-
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("Error getting the pod disruption bugdet for %s", webhookName))
 	}
 
-	collectPDBInfo(webhookName, pdbs)
+	collector.CollectPDBMetrics(pdbs)
 
-	if validationWebhook.NamespaceSelector != nil {
-		logger.Info(fmt.Sprintf("Checking namespace selector for %s", webhookName))
-		matchExpressions := validationWebhook.NamespaceSelector.MatchExpressions
-		scrapeNamespaceSelector(webhookName, matchExpressions)
-	}
+	logger.Info(fmt.Sprintf("Checking the namespace selector for %s", webhookName))
+	collector.CollectNamespaceSelectorMetrics(webhook.NamespaceSelector)
 
-	return nil
-}
-
-func scrapeNamespaceSelector(webhookName string, selectors []metav1.LabelSelectorRequirement) {
-	for _, selector := range selectors {
-		if selector.Key == "name" && selector.Operator == metav1.LabelSelectorOpNotIn && contains(selector.Values, "kube-system") {
-			metrics.ValidNamespaceSelectors.
-				WithLabelValues(webhookName, "Validation Webhook").Set(1)
-
-			return
-		}
-	}
-
-	metrics.ValidNamespaceSelectors.
-		WithLabelValues(webhookName, "Validation Webhook").Set(0)
-}
-
-func contains(values []string, value string) bool {
-	for _, v := range values {
-		if v == value {
-			return true
-		}
-	}
-
-	return false
-}
-
-func collectDeploymentInfo(webhookName string, deployments appsv1.DeploymentList) {
-	var replicas float64 = 0
-
-	if len(deployments.Items) > 0 {
-		deployment := deployments.Items[0]
-		replicas = float64(*deployment.Spec.Replicas)
-	}
-
-	metrics.ReplicasInfo.
-		WithLabelValues(webhookName, "Validation Webhook").
-		Set(replicas)
-}
-
-func collectPDBInfo(webhookName string, pdbs *policyv1.PodDisruptionBudgetList) {
-	var minAvailablePods float64 = 0
-
-	if len(pdbs.Items) < 1 {
-		setPBDMetricValue(webhookName, minAvailablePods)
-		return
-	}
-
-	pdb := pdbs.Items[0]
-
-	if pdb.Spec.MinAvailable == nil {
-		setPBDMetricValue(webhookName, minAvailablePods)
-		return
-	}
-
-	x := pdb.Spec.MinAvailable.IntValue()
-	minAvailablePods = float64(x)
-
-	metrics.PodDisruptionBudgetInfo.
-		WithLabelValues(webhookName, "Validation Webhook").
-		Set(minAvailablePods)
-}
-
-func setPBDMetricValue(webhookName string, value float64) {
-	metrics.PodDisruptionBudgetInfo.
-		WithLabelValues(webhookName, "Validation Webhook").
-		Set(value)
+	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.
