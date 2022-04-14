@@ -5,11 +5,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
-//Need a metric for the number of webhooks with not enough replicas
-//Need a metric for the number of webhooks with no good pdbs
-//Namespace selector
-//Operator selector
-
 const (
 	metricNamespace = "webhook_exporter"
 	metricSubsystem = "webhooks"

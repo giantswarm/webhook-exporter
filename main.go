@@ -114,6 +114,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ValidatingWebhookConfiguration")
 		os.Exit(1)
 	}
+
 	if err = (&controllers.MutatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
