@@ -105,11 +105,23 @@ func main() {
 	}
 
 	if err = (&controllers.ValidatingWebhookConfigurationReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+
+		Log:       ctrl.Log.WithName("ValidatingWebhookExporter"),
 		K8sClient: k8sClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ValidatingWebhookConfiguration")
+		os.Exit(1)
+	}
+	if err = (&controllers.MutatingWebhookConfigurationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+
+		Log:       ctrl.Log.WithName("MutatingWebhookExporter"),
+		K8sClient: k8sClient,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "MutatingWebhookConfiguration")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

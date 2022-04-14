@@ -21,19 +21,17 @@ import (
 	"time"
 
 	"github.com/giantswarm/webhook-exporter/pkg/metrics"
+	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ValidatingWebhookConfigurationReconciler reconciles a ValidatingWebhookConfiguration object
-type ValidatingWebhookConfigurationReconciler struct {
+// MutatingWebhookConfigurationReconciler reconciles a MutatingWebhookConfiguration object
+type MutatingWebhookConfigurationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 
@@ -41,23 +39,23 @@ type ValidatingWebhookConfigurationReconciler struct {
 	K8sClient *kubernetes.Clientset
 }
 
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations/finalizers,verbs=update
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the ValidatingWebhookConfiguration object against the actual cluster state, and then
+// the MutatingWebhookConfiguration object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx).WithValues("webhook", req.NamespacedName)
+func (r *MutatingWebhookConfigurationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := r.Log.WithValues("webhook", req.NamespacedName)
 
-	configuration := &admissionregistrationv1.ValidatingWebhookConfiguration{}
+	configuration := &admissionregistrationv1.MutatingWebhookConfiguration{}
 
 	err := r.Client.Get(ctx, req.NamespacedName, configuration)
 	if apierrors.IsNotFound(err) {
@@ -69,7 +67,7 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 	for _, webhook := range configuration.Webhooks {
 		collector := metrics.Collector{
 			Name: webhook.Name,
-			Kind: "Validating",
+			Kind: "Mutating",
 		}
 
 		collector.CollectWebhookMetrics(
@@ -88,8 +86,8 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ValidatingWebhookConfigurationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MutatingWebhookConfigurationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}).
+		For(&admissionregistrationv1.MutatingWebhookConfiguration{}).
 		Complete(r)
 }
