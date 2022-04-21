@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -47,13 +46,10 @@ var _ = BeforeSuite(func() {
 
 var _ = Describe("Collector", func() {
 	var collector Collector
-	ctx := context.Background()
-	log := ctrl.Log.WithName("test")
 
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	BeforeEach(func() {
-		webhook := getWebhook()
 		collector = Collector{
 			Name: webhookName,
 			Kind: webhookKind,
@@ -67,14 +63,6 @@ var _ = Describe("Collector", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(k8sClient).NotTo(BeNil())
-
-		collector.CollectWebhookMetrics(
-			ctx,
-			log,
-			k8sClient,
-			webhook.ClientConfig,
-			*webhook.NamespaceSelector,
-		)
 	})
 
 	It(fmt.Sprintf("should have %d replicas", replicas), func() {
