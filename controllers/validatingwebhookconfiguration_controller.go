@@ -32,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const ValidatingWebhookExporterType = "validating"
+
 // ValidatingWebhookConfigurationReconciler reconciles a ValidatingWebhookConfiguration object
 type ValidatingWebhookConfigurationReconciler struct {
 	client.Client
@@ -69,7 +71,7 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 	for _, webhook := range configuration.Webhooks {
 		collector := metrics.Collector{
 			Name: webhook.Name,
-			Kind: "Validating",
+			Kind: ValidatingWebhookExporterType,
 		}
 
 		collector.CollectWebhookMetrics(
