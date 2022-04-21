@@ -69,7 +69,7 @@ func (collector Collector) CollectWebhookMetrics(
 	log.Info(fmt.Sprintf("Checking the namespace selector for %s", webhookName))
 	collector.collectNamespaceSelectorMetrics(&namespaceSelector)
 
-	return err
+	return nil
 }
 
 func (c Collector) collectNamespaceSelectorMetrics(namespaceSelector *metav1.LabelSelector) {
