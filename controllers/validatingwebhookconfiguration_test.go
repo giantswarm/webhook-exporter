@@ -12,13 +12,13 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
-var _ = Context("MutatatingWebhookConfiguration Controller", func() {
+var _ = Context("ValidatingWebhookConfiguration Controller", func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	Describe("Is Reconciled", func() {
 		It(fmt.Sprintf("should have a deployment with %d replicas", replicas), func() {
 			Eventually(func() int32 {
-				found := testutil.ToFloat64(metrics.ReplicasInfo.WithLabelValues(webhookName, MutatingWebhookExporterType))
+				found := testutil.ToFloat64(metrics.ReplicasInfo.WithLabelValues(webhookName, ValidatingWebhookExporterType))
 
 				return int32(found)
 			}, timeout, interval).Should(Equal(replicas))
@@ -26,7 +26,7 @@ var _ = Context("MutatatingWebhookConfiguration Controller", func() {
 
 		It(fmt.Sprintf("should have a pod disruption budget with a minimum of %d available", minAvailablePods), func() {
 			Eventually(func() int {
-				found := testutil.ToFloat64(metrics.PodDisruptionBudgetInfo.WithLabelValues(webhookName, MutatingWebhookExporterType))
+				found := testutil.ToFloat64(metrics.PodDisruptionBudgetInfo.WithLabelValues(webhookName, ValidatingWebhookExporterType))
 
 				return int(found)
 			}, timeout, interval).Should(Equal(minAvailablePods))
@@ -34,7 +34,7 @@ var _ = Context("MutatatingWebhookConfiguration Controller", func() {
 
 		It("should have a valid namespace selector", func() {
 			Eventually(func() int {
-				found := testutil.ToFloat64(metrics.ValidNamespaceSelectors.WithLabelValues(webhookName, MutatingWebhookExporterType))
+				found := testutil.ToFloat64(metrics.ValidNamespaceSelectors.WithLabelValues(webhookName, ValidatingWebhookExporterType))
 
 				return int(found)
 			}, timeout, interval).Should(Equal(1))

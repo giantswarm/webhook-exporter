@@ -20,6 +20,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -38,12 +39,25 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
+const (
+	webhookName string = "test.giantswarm.webhook"
+
+	serviceName      string = "test-giantswarm-webhook"
+	minAvailablePods int    = 2
+)
+
 var (
 	cfg       *rest.Config
 	k8sClient *kubernetes.Clientset
 	testEnv   *envtest.Environment
 	ctx       context.Context
 	cancel    context.CancelFunc
+
+	timeout  = time.Second * 20
+	duration = time.Second * 10
+	interval = time.Millisecond * 250
+
+	replicas int32 = 3
 )
 
 func TestControllers(t *testing.T) {
@@ -72,7 +86,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	err = createWebhook(ctx, k8sClient)
+	err = createMutatingWebhook(ctx, k8sClient)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = createValidatingWebhook(ctx, k8sClient)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = createService(ctx, k8sClient)
@@ -84,23 +101,25 @@ var _ = BeforeSuite(func() {
 	err = createPDB(ctx, k8sClient)
 	Expect(err).NotTo(HaveOccurred())
 
-	Eventually(func() bool {
-		_, err := k8sClient.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(ctx, webhookName, metav1.GetOptions{})
-		if err != nil {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-
-	controller := &MutatingWebhookConfigurationReconciler{
+	mutatingController := &MutatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
 		Log:    logf.Log,
 
 		K8sClient: k8sClient,
 	}
 
-	err = controller.SetupWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred(), "failed to setup controller")
+	validatingController := &ValidatingWebhookConfigurationReconciler{
+		Client: mgr.GetClient(),
+		Log:    logf.Log,
+
+		K8sClient: k8sClient,
+	}
+
+	err = mutatingController.SetupWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred(), "failed to setup mutating controller")
+
+	err = validatingController.SetupWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred(), "failed to setup validating controller")
 
 	go func() {
 		err := mgr.Start(ctx)
@@ -114,7 +133,7 @@ var _ = AfterSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 })
 
-func getWebhook() *v1.MutatingWebhookConfiguration {
+func getMutatingWebhook() *v1.MutatingWebhookConfiguration {
 	var port int32 = 3500
 	var sideEffects = v1.SideEffectClassNone
 	expression := getMatchExpressions()
@@ -144,6 +163,41 @@ func getWebhook() *v1.MutatingWebhookConfiguration {
 			Labels: map[string]string{},
 		},
 		Webhooks: []v1.MutatingWebhook{
+			webhook,
+		},
+	}
+}
+
+func getValidatingWebhook() *v1.ValidatingWebhookConfiguration {
+	var port int32 = 3500
+	var sideEffects = v1.SideEffectClassNone
+	expression := getMatchExpressions()
+	webhook := v1.ValidatingWebhook{
+		Name: webhookName,
+		ClientConfig: v1.WebhookClientConfig{
+			Service: &v1.ServiceReference{
+				Namespace: corev1.NamespaceDefault,
+				Name:      serviceName,
+				Port:      &port,
+			}, CABundle: []byte{}},
+		NamespaceSelector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{},
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				expression,
+			},
+		},
+		ObjectSelector:          &metav1.LabelSelector{},
+		SideEffects:             &sideEffects,
+		AdmissionReviewVersions: []string{"v1", "v1beta1"},
+	}
+
+	return &v1.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   webhookName,
+			Labels: map[string]string{},
+		},
+		Webhooks: []v1.ValidatingWebhook{
 			webhook,
 		},
 	}
@@ -250,10 +304,20 @@ func getDeployment() *appsv1.Deployment {
 	}
 }
 
-func createWebhook(ctx context.Context, k8sClient *kubernetes.Clientset) error {
+func createMutatingWebhook(ctx context.Context, k8sClient *kubernetes.Clientset) error {
 	webhookClient := k8sClient.AdmissionregistrationV1().MutatingWebhookConfigurations()
 
-	webhook := getWebhook()
+	webhook := getMutatingWebhook()
+
+	_, err := webhookClient.Create(ctx, webhook, metav1.CreateOptions{})
+
+	return err
+}
+
+func createValidatingWebhook(ctx context.Context, k8sClient *kubernetes.Clientset) error {
+	webhookClient := k8sClient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
+
+	webhook := getValidatingWebhook()
 
 	_, err := webhookClient.Create(ctx, webhook, metav1.CreateOptions{})
 
