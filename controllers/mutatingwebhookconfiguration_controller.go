@@ -30,6 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const MutatingWebhookExporterType = "mutating"
+
 // MutatingWebhookConfigurationReconciler reconciles a MutatingWebhookConfiguration object
 type MutatingWebhookConfigurationReconciler struct {
 	client.Client
@@ -67,7 +69,7 @@ func (r *MutatingWebhookConfigurationReconciler) Reconcile(ctx context.Context, 
 	for _, webhook := range configuration.Webhooks {
 		collector := metrics.Collector{
 			Name: webhook.Name,
-			Kind: "Mutating",
+			Kind: MutatingWebhookExporterType,
 		}
 
 		collector.CollectWebhookMetrics(

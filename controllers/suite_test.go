@@ -98,6 +98,7 @@ var _ = BeforeSuite(func() {
 
 		K8sClient: k8sClient,
 	}
+
 	err = controller.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred(), "failed to setup controller")
 
@@ -114,7 +115,7 @@ var _ = AfterSuite(func() {
 })
 
 func getWebhook() *v1.MutatingWebhookConfiguration {
-	var port int32 = 32
+	var port int32 = 3500
 	var sideEffects = v1.SideEffectClassNone
 	expression := getMatchExpressions()
 	webhook := v1.MutatingWebhook{

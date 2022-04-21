@@ -15,7 +15,7 @@ import (
 
 const (
 	webhookName string = "test.giantswarm.webhook"
-	webhookKind string = "Mutating"
+	webhookKind string = MutatingWebhookExporterType
 
 	serviceName      string = "test-giantswarm-webhook"
 	minAvailablePods int    = 2
