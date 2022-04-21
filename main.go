@@ -25,6 +25,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
@@ -84,24 +85,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	home := homedir.HomeDir()
-	var kubeconfig string = filepath.Join(home, ".kube", "config")
-	// if home := homedir.HomeDir(); home != "" {
-	// 	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	// } else {
-	// 	kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	// }
-	// flag.Parse()
+	var config *rest.Config
 
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err = rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		setupLog.Error(err, "unable to setup in cluster config for kubernetes client")
+
+		home := homedir.HomeDir()
+		var kubeconfig string = filepath.Join(home, ".kube", "config")
+
+		// use the current context in kubeconfig
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			setupLog.Error(err, "unable to setup in cluster config for kubernetes client")
+			os.Exit(1)
+		}
 	}
 
 	k8sClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		setupLog.Error(err, "unable to setup kubernetes client config")
+		setupLog.Error(err, "unable to setup kubernetes client")
 	}
 
 	if err = (&controllers.ValidatingWebhookConfigurationReconciler{

@@ -51,6 +51,7 @@ func (collector Collector) CollectWebhookMetrics(
 	})
 	if err != nil {
 		log.Error(microerror.Mask(err), "Error fetching webhook deployement")
+		return err
 	}
 
 	log.Info(fmt.Sprintf("Checking replicas number of replicas for %s", serviceName))
@@ -62,6 +63,7 @@ func (collector Collector) CollectWebhookMetrics(
 	})
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Error getting the pod disruption bugdet for %s", webhookName))
+		return err
 	}
 
 	collector.collectPDBMetrics(pdbs)
