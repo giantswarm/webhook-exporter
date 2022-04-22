@@ -49,4 +49,3 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-o
