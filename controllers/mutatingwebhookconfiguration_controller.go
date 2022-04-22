@@ -20,7 +20,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +27,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 )
 
 const MutatingWebhookExporterType = "mutating"
