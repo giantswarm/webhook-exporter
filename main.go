@@ -41,9 +41,8 @@ import (
 )
 
 var (
-	scheme             = runtime.NewScheme()
-	setupLog           = ctrl.Log.WithName("setup")
-	webhookMetricsPath = "webhook-metrics"
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
