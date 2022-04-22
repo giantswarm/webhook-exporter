@@ -25,39 +25,40 @@ var _ = Describe("Metrics", func() {
 
 	Describe("Exporting metrics", func() {
 		Context("Collection of metrics from 3 different webhooks", func() {
-			replicasMetrics.WithLabelValues("test.giantswarm.webhook.one", kind).Inc()
-			replicasMetrics.WithLabelValues("test.giantswarm.webhook.two", kind).Inc()
-			replicasMetrics.WithLabelValues("test.giantswarm.webhook.three", kind).Inc()
 
 			It("should have 3 metrics for replicas Info from the different webhooks", func() {
+				replicasMetrics.WithLabelValues("test.giantswarm.webhook.one", kind).Inc()
+				replicasMetrics.WithLabelValues("test.giantswarm.webhook.two", kind).Inc()
+				replicasMetrics.WithLabelValues("test.giantswarm.webhook.three", kind).Inc()
+
 				Expect(3).To(Equal(testutil.CollectAndCount(replicasMetrics)))
 			})
 		})
 
 		Context("for replicas", func() {
-			var replicas float64 = 10
-			replicasMetrics.WithLabelValues("test.giantswarm.webhook.one", kind).Set(replicas)
-
 			It("Should have a metric for webhook with ten replicas", func() {
+				var replicas float64 = 10
+				replicasMetrics.WithLabelValues("test.giantswarm.webhook.one", kind).Set(replicas)
+
 				Expect(float64(replicas)).To(Equal(testutil.ToFloat64(replicasMetrics.WithLabelValues("test.giantswarm.webhook.one", kind))))
 			})
 		})
 
 		Context("Collection of pod disruption metrics for three different webhooks", func() {
-			pdbMetrics.WithLabelValues("test.giantswarm.webhook.one", kind).Inc()
-			pdbMetrics.WithLabelValues("test.giantswarm.webhook.two", kind).Inc()
-			pdbMetrics.WithLabelValues("test.giantswarm.webhook.three", kind).Inc()
-
 			It("should have three metrics for pod disruption budgets", func() {
+				pdbMetrics.WithLabelValues("test.giantswarm.webhook.one", kind).Inc()
+				pdbMetrics.WithLabelValues("test.giantswarm.webhook.two", kind).Inc()
+				pdbMetrics.WithLabelValues("test.giantswarm.webhook.three", kind).Inc()
+
 				Expect(3).To(Equal(testutil.CollectAndCount(pdbMetrics)))
 			})
 		})
 
 		Context("Collection of pod disruption metric values for a webhook", func() {
-			var pdbs float64 = 3
-
-			pdbMetrics.WithLabelValues("test.giantswarm.webhook", kind).Set(pdbs)
 			It("Should have a metric of with value of three", func() {
+				var pdbs float64 = 3
+				pdbMetrics.WithLabelValues("test.giantswarm.webhook", kind).Set(pdbs)
+
 				Expect(float64(pdbs)).To(Equal(testutil.ToFloat64(pdbMetrics.WithLabelValues("test.giantswarm.webhook", kind))))
 			})
 		})
