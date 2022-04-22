@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  architect: giantswarm/architect@4.16.0
+  architect: giantswarm/architect@4.17.0
 
 jobs:
   tests:
@@ -11,42 +11,40 @@ jobs:
       - run:
           name: "Run tests"
           command: make test
-  architect/go-build:
-    name: go-build
-    binary: webhook-exporter
-    filters:
-      tags:
-        only: /^v.*/
-  architect/push-to-docker:
-    context: "architect"
-    name: push-webhook-exporter-to-quay
-    image: "quay.io/giantswarm/webhook-exporter"
-    username_envar: "QUAY_USERNAME"
-    password_envar: "QUAY_PASSWORD"
-    requires:
-      - go-build
-    # Needed to trigger job also on git tag.
-    filters:
-      tags:
-        only: /^v.*/
-  architect/push-to-docker:
-    context: "architect"
-    name: push-webhook-exporter-to-docker
-    image: "docker.io/giantswarm/webhook-exporter"
-    username_envar: "DOCKER_USERNAME"
-    password_envar: "DOCKER_PASSWORD"
-    requires:
-      - go-build
-    # Needed to trigger job also on git tag.
-    filters:
-      tags:
-        only: /^v.*/
+
 
 workflows:
   build:
     jobs:
-      - tests
-      - architect/go-build
-      - architect/push-to-docker
-      - architect/push-to-docker
+      - architect/go-build:
+        name: go-build
+        binary: webhook-exporter
+        filters:
+          tags:
+            only: /^v.*/
+            
+      - architect/push-to-docker:
+        context: "architect"
+        name: push-webhook-exporter-to-quay
+        image: "quay.io/giantswarm/webhook-exporter"
+        username_envar: "QUAY_USERNAME"
+        password_envar: "QUAY_PASSWORD"
+        requires:
+          - go-build
+        # Needed to trigger job also on git tag.
+        filters:
+          tags:
+            only: /^v.*/
+      - architect/push-to-docker:
+        context: "architect"
+        name: push-webhook-exporter-to-docker
+        image: "docker.io/giantswarm/webhook-exporter"
+        username_envar: "DOCKER_USERNAME"
+        password_envar: "DOCKER_PASSWORD"
+        requires:
+          - go-build
+        # Needed to trigger job also on git tag.
+        filters:
+          tags:
+            only: /^v.*/
 
