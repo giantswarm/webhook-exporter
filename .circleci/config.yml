@@ -28,6 +28,8 @@ workflows:
                 command: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
             - run:
                 command: setup-envtest use
+            - run:
+                command: export KUBEBUILDER_ASSETS="$(setup-envtest use $(ENVTEST_K8S_VERSION) -p path)"
             
       - architect/push-to-docker:
           context: "architect"
