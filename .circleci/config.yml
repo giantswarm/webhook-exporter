@@ -11,27 +11,22 @@ jobs:
       - run:
           name: "Run tests"
           command: CGO_ENABLED=0 make test
-
+  build:
+    executor: architect/architect
+    steps:
+      - checkout
+      - run:
+          name: "Run tests"
+          command: CGO_ENABLED=0 make test
+      - architect/go-build:
+          binary: webhook-exporter 
+          os: linux
+    
 
 workflows:
   build:
     jobs:
-      - tests
-      - architect/go-build:
-          name: go-build
-          binary: webhook-exporter 
-          filters:
-            tags:
-              only: /^v.*/
-          pre-steps:
-            - run:
-                command: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-            - run:
-                command: setup-envtest use
-            - checkout
-            - run:
-                command: make manifests && make generate && export KUBEBUILDER_ASSETS="$(setup-envtest use $(ENVTEST_K8S_VERSION) -p path)"
-            
+      - build
       - architect/push-to-docker:
           context: "architect"
           name: push-webhook-exporter-to-quay
@@ -39,7 +34,7 @@ workflows:
           username_envar: "QUAY_USERNAME"
           password_envar: "QUAY_PASSWORD"
           requires:
-            - go-build
+            - build
           # Needed to trigger job als on git tag.
           filters:
             tags:
@@ -52,8 +47,9 @@ workflows:
           username_envar: "DOCKER_USERNAME"
           password_envar: "DOCKER_PASSWORD"
           requires:
-            - go-build
+            - build
           # Needed to trigger job also on git tag.
           filters:
             tags:
               only: /^v.*/
+
