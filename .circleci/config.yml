@@ -29,7 +29,7 @@ workflows:
             - run:
                 command: setup-envtest use
             - run:
-                command: export KUBEBUILDER_ASSETS="$(setup-envtest use $(ENVTEST_K8S_VERSION) -p path)"
+                command: make manifests && make generate && export KUBEBUILDER_ASSETS="$(setup-envtest use $(ENVTEST_K8S_VERSION) -p path)"
             
       - architect/push-to-docker:
           context: "architect"
