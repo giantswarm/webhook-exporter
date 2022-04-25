@@ -12,7 +12,7 @@ jobs:
           name: "Run tests"
           command: CGO_ENABLED=0 make test
   build:
-    executor: architect/architect
+    executor: architect/machine
     steps:
       - checkout
       - run:
