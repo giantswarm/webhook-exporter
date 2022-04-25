@@ -24,6 +24,7 @@ workflows:
                 command: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
             - run:
                 command: setup-envtest use
+            - run: checkout
             - run:
                 command: CGO_ENABLED=0 make generate && export KUBEBUILDER_ASSETS="$(setup-envtest use $(ENVTEST_K8S_VERSION) -p path)"
             
