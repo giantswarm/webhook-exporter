@@ -25,9 +25,9 @@ workflows:
               only: /^v.*/
           pre-steps:
             - run:
-                command: export ENVTEST=$(shell pwd)/bin/setup-envtest
+                command: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
             - run:
-                command: $(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+                command: setup-envtest use
             
       - architect/push-to-docker:
           context: "architect"
