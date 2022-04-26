@@ -6,22 +6,34 @@ metadata:
     {{- include "labels.common" . | nindent 4 }}
 rules:
   - apiGroups:
-      - core
-      - apps
       - apiregistration.k8s.io
-      - policy
+      - admissionregistration.k8s.io
     resources:
-      - deployments
-      - poddisruptionbudgets
       - mutatingwebhookconfigurations
-      - services
       - validatingwebhookconfigurations
     verbs:
       - get
       - list
       - watch
-    resourceNames:
-      - "{{ include "resource.default.name" . }}"
+  - apiGroups:
+      - ""
+      - apps
+    resources:
+      - deployments
+      - poddisruptionbudgets
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: {{ include "resource.default.name" . }}
   labels:
+    giantswarm.io/monitoring: "true"
     {{- include "labels.common" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
