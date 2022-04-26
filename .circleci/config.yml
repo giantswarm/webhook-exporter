@@ -4,10 +4,39 @@ orbs:
   architect: giantswarm/architect@4.17.0
 
 jobs:
-  tests:
+  test_and_build:
     executor: architect/architect
     steps:
       - checkout
+      - run: |
+          go mod tidy && git diff --exit-code
+      - run: |
+          echo -n "-w -linkmode 'auto' -extldflags '-static'" > .ldflags
+      - run: >
+          echo -n " -X '$(go list .)/pkg/project.buildTimestamp=$(date --utc
+          '+%FT%TZ')'" >> .ldflags
+      - run: |
+          echo -n " -X '$(go list .)/pkg/project.gitSHA=${CIRCLE_SHA1}'" >> .ldflags
+      - run: |
+          echo "\"$(cat .ldflags)\""
+      - run:
+          command: >
+            go install golang.org/x/tools/cmd/goimports@latest && if [[ -n
+            $(goimports -local
+            github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -l .)
+            ]]; then goimports -local
+            github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} -d . &&
+            exit 1; fi
+          name: Check if imports are properly sorted
+      - run: |
+          test -z $(gofmt -l .) || gofmt -d .
+      - run: |
+          CGO_ENABLED=0 go vet ./...
+      - run: |
+          CGO_ENABLED=0 golangci-lint run -E gosec -E goconst
+      - run: >
+          CGO_ENABLED=0 go list -json -m all | nancy sleuth --skip-update-check
+          --quiet
       - run:
           name: "Run tests"
           command: CGO_ENABLED=0 make test
@@ -15,19 +44,7 @@ jobs:
 workflows:
   build:
     jobs:
-      - tests
-      - architect/go-build:
-          name: go-build
-          binary: webhook-exporter 
-          pre-steps:
-            - run:
-                command: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-            - run:
-                command: setup-envtest use
-            - checkout
-            - run:
-                command: CGO_ENABLED=0 make generate && export KUBEBUILDER_ASSETS="$(setup-envtest use $(ENVTEST_K8S_VERSION) -p path)"
-            
+      - test_and_build
       - architect/push-to-docker:
           context: "architect"
           name: push-webhook-exporter-to-quay
@@ -35,7 +52,7 @@ workflows:
           username_envar: "QUAY_USERNAME"
           password_envar: "QUAY_PASSWORD"
           requires:
-            - go-build
+            - test_and_build
           # Needed to trigger job als on git tag.
           filters:
             tags:
@@ -48,7 +65,7 @@ workflows:
           username_envar: "DOCKER_USERNAME"
           password_envar: "DOCKER_PASSWORD"
           requires:
-            - go-build
+            - test_and_build
           # Needed to trigger job also on git tag.
           filters:
             tags:
