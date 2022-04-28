@@ -7,10 +7,10 @@ import (
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Collector struct {
@@ -26,7 +26,7 @@ const (
 func (collector Collector) CollectWebhookMetrics(
 	ctx context.Context,
 	log logr.Logger,
-	k8sClient *kubernetes.Clientset,
+	k8sClient client.Client,
 	clientConfig admissionregistrationv1.WebhookClientConfig,
 	namespaceSelector metav1.LabelSelector,
 ) error {
@@ -34,7 +34,11 @@ func (collector Collector) CollectWebhookMetrics(
 	serviceName := clientConfig.Service.Name
 	namespace := clientConfig.Service.Namespace
 
-	service, err := k8sClient.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
+	service := &corev1.Service{}
+	err := k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: namespace,
+		Name:      serviceName,
+	}, service)
 	log.Info("Found the following", "webhook", webhookName, "service", serviceName)
 
 	if err != nil {
@@ -43,11 +47,13 @@ func (collector Collector) CollectWebhookMetrics(
 		return err
 	}
 
-	selector := labels.FormatLabels(service.Spec.Selector)
+	var selector client.MatchingLabels = service.Spec.Selector
+	opts := []client.ListOption{
+		selector,
+	}
 
-	deployments, err := k8sClient.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: selector,
-	})
+	deployments := &appsv1.DeploymentList{}
+	err = k8sClient.List(ctx, deployments, opts...)
 	if err != nil {
 		log.Error(microerror.Mask(err), "Error fetching webhook deployment", "webhook", webhookName)
 		return err
@@ -57,10 +63,8 @@ func (collector Collector) CollectWebhookMetrics(
 	collector.collectDeploymentMetrics(*deployments)
 
 	log.Info("Checking pod disruption budget", "webhook", webhookName)
-	pdbs, err := k8sClient.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: selector,
-	})
-	if err != nil {
+	pdbs := &policyv1.PodDisruptionBudgetList{}
+	if err = k8sClient.List(ctx, pdbs, opts...); err != nil {
 		log.Error(err, "Error fetching pod disruption bugdet", "webhook", webhookName)
 		return err
 	}

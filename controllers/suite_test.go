@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/admissionregistration/v1"
@@ -33,6 +34,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -57,7 +59,8 @@ var (
 	duration = time.Second * 10
 	interval = time.Millisecond * 250
 
-	replicas int32 = 3
+	replicas  int32 = 3
+	namespace string
 )
 
 func TestControllers(t *testing.T) {
@@ -81,38 +84,24 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred(), "failed to create manager")
 
 	ctx, cancel = context.WithCancel(context.TODO())
-	k8sClient, err := kubernetes.NewForConfig(cfg)
+	k8sClient := mgr.GetClient()
 
-	Expect(err).NotTo(HaveOccurred())
-	Expect(k8sClient).NotTo(BeNil())
+	Expect(createNamespace(ctx, k8sClient)).To(Succeed())
+	Expect(createMutatingWebhook(ctx, k8sClient)).To(Succeed())
+	Expect(createValidatingWebhook(ctx, k8sClient)).To(Succeed())
 
-	err = createMutatingWebhook(ctx, k8sClient)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = createValidatingWebhook(ctx, k8sClient)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = createService(ctx, k8sClient)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = createDeployment(ctx, k8sClient)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = createPDB(ctx, k8sClient)
-	Expect(err).NotTo(HaveOccurred())
+	Expect(createService(ctx, k8sClient)).To(Succeed())
+	Expect(createDeployment(ctx, k8sClient)).To(Succeed())
+	Expect(createPDB(ctx, k8sClient)).To(Succeed())
 
 	mutatingController := &MutatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
 		Log:    logf.Log,
-
-		K8sClient: k8sClient,
 	}
 
 	validatingController := &ValidatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
 		Log:    logf.Log,
-
-		K8sClient: k8sClient,
 	}
 
 	err = mutatingController.SetupWithManager(mgr)
@@ -141,7 +130,7 @@ func getMutatingWebhook() *v1.MutatingWebhookConfiguration {
 		Name: webhookName,
 		ClientConfig: v1.WebhookClientConfig{
 			Service: &v1.ServiceReference{
-				Namespace: corev1.NamespaceDefault,
+				Namespace: namespace,
 				Name:      serviceName,
 				Port:      &port,
 			}, CABundle: []byte{}},
@@ -176,7 +165,7 @@ func getValidatingWebhook() *v1.ValidatingWebhookConfiguration {
 		Name: webhookName,
 		ClientConfig: v1.WebhookClientConfig{
 			Service: &v1.ServiceReference{
-				Namespace: corev1.NamespaceDefault,
+				Namespace: namespace,
 				Name:      serviceName,
 				Port:      &port,
 			}, CABundle: []byte{}},
@@ -227,7 +216,8 @@ func getService() *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceName,
+			Name:      serviceName,
+			Namespace: namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -246,7 +236,8 @@ func getPDB() *policyv1.PodDisruptionBudget {
 	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: webhookName,
+			Name:      webhookName,
+			Namespace: namespace,
 			Labels: map[string]string{
 				"app": "test",
 			},
@@ -265,7 +256,7 @@ func getDeployment() *appsv1.Deployment {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      webhookName,
-			Namespace: corev1.NamespaceDefault,
+			Namespace: namespace,
 			Labels: map[string]string{
 				"app": "test",
 			},
@@ -304,49 +295,50 @@ func getDeployment() *appsv1.Deployment {
 	}
 }
 
-func createMutatingWebhook(ctx context.Context, k8sClient *kubernetes.Clientset) error {
-	webhookClient := k8sClient.AdmissionregistrationV1().MutatingWebhookConfigurations()
+func createNamespace(ctx context.Context, k8sClient client.Client) error {
+	namespace = uuid.New().String()
+	namespaceObj := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
 
+	err := k8sClient.Create(ctx, namespaceObj)
+
+	return err
+}
+
+func createMutatingWebhook(ctx context.Context, k8sClient client.Client) error {
 	webhook := getMutatingWebhook()
-
-	_, err := webhookClient.Create(ctx, webhook, metav1.CreateOptions{})
+	err := k8sClient.Create(ctx, webhook)
 
 	return err
 }
 
-func createValidatingWebhook(ctx context.Context, k8sClient *kubernetes.Clientset) error {
-	webhookClient := k8sClient.AdmissionregistrationV1().ValidatingWebhookConfigurations()
-
+func createValidatingWebhook(ctx context.Context, k8sClient client.Client) error {
 	webhook := getValidatingWebhook()
-
-	_, err := webhookClient.Create(ctx, webhook, metav1.CreateOptions{})
+	err := k8sClient.Create(ctx, webhook)
 
 	return err
 }
 
-func createService(ctx context.Context, k8sClient *kubernetes.Clientset) error {
-	serviceClient := k8sClient.CoreV1().Services(corev1.NamespaceDefault)
-
+func createService(ctx context.Context, k8sClient client.Client) error {
 	service := getService()
-	_, err := serviceClient.Create(ctx, service, metav1.CreateOptions{})
+	err := k8sClient.Create(ctx, service)
 
 	return err
 }
 
-func createDeployment(ctx context.Context, k8sClient *kubernetes.Clientset) error {
-	deploymentsClient := k8sClient.AppsV1().Deployments(corev1.NamespaceDefault)
+func createDeployment(ctx context.Context, k8sClient client.Client) error {
 	deployment := getDeployment()
-
-	_, err := deploymentsClient.Create(ctx, deployment, metav1.CreateOptions{})
+	err := k8sClient.Create(ctx, deployment)
 
 	return err
 }
 
-func createPDB(ctx context.Context, k8sClient *kubernetes.Clientset) error {
-	pdbClient := k8sClient.PolicyV1().PodDisruptionBudgets(corev1.NamespaceDefault)
-
+func createPDB(ctx context.Context, k8sClient client.Client) error {
 	pdb := getPDB()
-	_, err := pdbClient.Create(ctx, pdb, metav1.CreateOptions{})
+	err := k8sClient.Create(ctx, pdb)
 
 	return err
 }

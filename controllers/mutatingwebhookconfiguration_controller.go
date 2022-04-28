@@ -25,7 +25,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,8 +36,7 @@ type MutatingWebhookConfigurationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 
-	Log       logr.Logger
-	K8sClient *kubernetes.Clientset
+	Log logr.Logger
 }
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
@@ -75,7 +73,7 @@ func (r *MutatingWebhookConfigurationReconciler) Reconcile(ctx context.Context, 
 		collector.CollectWebhookMetrics(
 			ctx,
 			log,
-			r.K8sClient,
+			r.Client,
 			webhook.ClientConfig,
 			*webhook.NamespaceSelector,
 		)
