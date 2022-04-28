@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
@@ -36,7 +35,7 @@ func (collector Collector) CollectWebhookMetrics(
 	namespace := clientConfig.Service.Namespace
 
 	service, err := k8sClient.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
-	log.Info(fmt.Sprintf("Found the service named %s for the webhook %s", serviceName, webhookName))
+	log.Info("Found the following", "webhook", webhookName, "service", serviceName)
 
 	if err != nil {
 		collector.setValueOfAllMetrics(0)
@@ -50,25 +49,25 @@ func (collector Collector) CollectWebhookMetrics(
 		LabelSelector: selector,
 	})
 	if err != nil {
-		log.Error(microerror.Mask(err), "Error fetching webhook deployement")
+		log.Error(microerror.Mask(err), "Error fetching webhook deployment", "webhook", webhookName)
 		return err
 	}
 
-	log.Info(fmt.Sprintf("Checking replicas number of replicas for %s", serviceName))
+	log.Info("Checking number of replicas", "webhook", webhookName)
 	collector.collectDeploymentMetrics(*deployments)
 
-	log.Info(fmt.Sprintf("Checking the pod disruption budget for %s", serviceName))
+	log.Info("Checking pod disruption budget", "webhook", webhookName)
 	pdbs, err := k8sClient.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Error getting the pod disruption bugdet for %s", webhookName))
+		log.Error(err, "Error fetching pod disruption bugdet", "webhook", webhookName)
 		return err
 	}
 
 	collector.collectPDBMetrics(pdbs)
 
-	log.Info(fmt.Sprintf("Checking the namespace selector for %s", webhookName))
+	log.Info("Checking the namespace selector", "webhook", webhookName)
 	collector.collectNamespaceSelectorMetrics(&namespaceSelector)
 
 	return nil
