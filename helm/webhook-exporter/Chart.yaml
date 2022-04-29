@@ -1,6 +1,6 @@
 apiVersion: v2
 name: webhook-exporter
 type: application
-description: A prometheus exporter to monitor resilience of webhooks 
+description: A prometheus exporter to monitor resilience of webhooks
 version: [[ .Version ]]
 appVersion: "[[ .AppVersion ]]"
