@@ -17,10 +17,10 @@ registry:
 
 podAnnotations: {}
 
-podSecurityContext: 
+podSecurityContext:
   fsGroup: 2000
 
-securityContext: 
+securityContext:
   allowPrivilegeEscalation: false
   runAsNonRoot: true
   runAsUser: 1000
