@@ -19,15 +19,11 @@ package main
 import (
 	"flag"
 	"os"
-	"path/filepath"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"k8s.io/client-go/kubernetes"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -81,34 +77,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	var config *rest.Config
-
-	config, err = rest.InClusterConfig()
-	if err != nil {
-		setupLog.Error(err, "unable to setup in cluster config for kubernetes client")
-
-		home := homedir.HomeDir()
-		var kubeconfig string = filepath.Join(home, ".kube", "config")
-
-		// use the current context in kubeconfig
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		if err != nil {
-			setupLog.Error(err, "unable to setup in cluster config for kubernetes client")
-			os.Exit(1)
-		}
-	}
-
-	k8sClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		setupLog.Error(err, "unable to setup kubernetes client")
-	}
-
 	if err = (&controllers.ValidatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 
-		Log:       ctrl.Log.WithName("ValidatingWebhookExporter"),
-		K8sClient: k8sClient,
+		Log: ctrl.Log.WithName("ValidatingWebhookExporter"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ValidatingWebhookConfiguration")
 		os.Exit(1)
@@ -118,8 +91,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 
-		Log:       ctrl.Log.WithName("MutatingWebhookExporter"),
-		K8sClient: k8sClient,
+		Log: ctrl.Log.WithName("MutatingWebhookExporter"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MutatingWebhookConfiguration")
 		os.Exit(1)

@@ -27,7 +27,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,8 +39,7 @@ type ValidatingWebhookConfigurationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 
-	Log       logr.Logger
-	K8sClient *kubernetes.Clientset
+	Log logr.Logger
 }
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
@@ -78,7 +76,7 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 		err = collector.CollectWebhookMetrics(
 			ctx,
 			log,
-			r.K8sClient,
+			r.Client,
 			webhook.ClientConfig,
 			*webhook.NamespaceSelector,
 		)
