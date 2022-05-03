@@ -75,7 +75,7 @@ workflows:
           context: "architect"
           name: push-webhook-exporter-to-app-catalog
           app_catalog: "giantswarm-playground-catalog"
-          app_catalog_test: "giantswarm-playground-test-catalog"
+          app_catalog_test: "control-plane-test-catalog"
           chart: "webhook-exporter"
           requires:
             - push-webhook-exporter-to-quay
