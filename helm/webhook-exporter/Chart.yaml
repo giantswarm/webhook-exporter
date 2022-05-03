@@ -4,3 +4,6 @@ type: application
 description: "A prometheus exporter to monitor resilience of webhooks"
 version: [[ .Version ]]
 appVersion: "[[ .AppVersion ]]"
+annotations:
+  application.giantswarm.io/team: "phoenix"
+  config.giantswarm.io/version: 1.x.x
