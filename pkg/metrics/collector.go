@@ -39,7 +39,7 @@ func (collector Collector) CollectWebhookMetrics(
 		Namespace: namespace,
 		Name:      serviceName,
 	}, service)
-	log.Info("Found the following", "webhook", webhookName, "service", serviceName)
+	log.Info("Found the webhook service", "webhook", webhookName, "service", serviceName)
 
 	if err != nil {
 		collector.setValueOfAllMetrics(0)
