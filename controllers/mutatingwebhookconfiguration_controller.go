@@ -40,6 +40,9 @@ type MutatingWebhookConfigurationReconciler struct {
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations/finalizers,verbs=update
 
+//On reconcile kubernetes attempts to bring clusters actual state to desired state.
+// When this is triggered, this function collects multiple metrics about the MutatingWebhookConfiguration being reconciled.
+// It doesn't do any manipulation on the resource itself.
 
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
