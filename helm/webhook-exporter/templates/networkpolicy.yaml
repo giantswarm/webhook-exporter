@@ -2,7 +2,7 @@ kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
   name: {{ include "resource.networkPolicy.name" . }}
-  namespace: {{ include "resource.default.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "labels.common" . | nindent 4 }}
 spec:
