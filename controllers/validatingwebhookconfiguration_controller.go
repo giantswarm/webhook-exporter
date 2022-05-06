@@ -64,13 +64,17 @@ func (r *ValidatingWebhookConfigurationReconciler) Reconcile(ctx context.Context
 			Kind: ValidatingWebhookExporterType,
 		}
 
-		collector.CollectWebhookMetrics(
+		err = collector.CollectWebhookMetrics(
 			ctx,
 			log,
 			r.Client,
 			webhook.ClientConfig,
 			*webhook.NamespaceSelector,
 		)
+
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{

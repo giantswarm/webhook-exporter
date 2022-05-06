@@ -62,13 +62,17 @@ func (r *MutatingWebhookConfigurationReconciler) Reconcile(ctx context.Context, 
 			Kind: MutatingWebhookExporterType,
 		}
 
-		collector.CollectWebhookMetrics(
+		err = collector.CollectWebhookMetrics(
 			ctx,
 			log,
 			r.Client,
 			webhook.ClientConfig,
 			*webhook.NamespaceSelector,
 		)
+
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{
