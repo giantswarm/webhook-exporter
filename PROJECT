@@ -1,0 +1,19 @@
+domain: giantswarm.io
+layout:
+- go.kubebuilder.io/v3
+projectName: webhook-exporter
+repo: github.com/giantswarm/webhook-exporter
+resources:
+- controller: true
+  domain: k8s.io
+  group: admissionregistration
+  kind: ValidatingWebhookConfiguration
+  path: k8s.io/api/admissionregistration/v1
+  version: v1
+- controller: true
+  domain: k8s.io
+  group: admissionregistration
+  kind: MutatingWebhookConfiguration
+  path: k8s.io/api/admissionregistration/v1
+  version: v1
+version: "3"
