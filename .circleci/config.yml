@@ -25,12 +25,11 @@ workflows:
           pre-steps:
             - checkout
             - run:
-              name: "Setup test env"
-              command: | 
-                echo 'export ENVTEST="$(pwd)/bin/setup-env"' >> $BASH_ENV
-                go get sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-                echo ' export KUBEBUILDER_ASSETS="$(setup-envtest use 1.23 -p path)"' >> $BASH_ENV
-                make pre-test
+                command: | 
+                  echo 'export ENVTEST="$(pwd)/bin/setup-env"' >> $BASH_ENV
+                  go get sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+                  echo ' export KUBEBUILDER_ASSETS="$(setup-envtest use 1.23 -p path)"' >> $BASH_ENV
+                  make pre-test
 
 
       - architect/push-to-docker:
