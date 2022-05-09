@@ -15,7 +15,7 @@ jobs:
 workflows:
   build:
     jobs:
-      - test_and_build
+      - test
       - architect/go-build:
           name: go-build
           binary: webhook-exporter
@@ -30,7 +30,7 @@ workflows:
           username_envar: "QUAY_USERNAME"
           password_envar: "QUAY_PASSWORD"
           requires:
-            - test_and_build
+            - test
           # Needed to trigger job als on git tag.
           filters:
             tags:
@@ -43,7 +43,7 @@ workflows:
           username_envar: "DOCKER_USERNAME"
           password_envar: "DOCKER_PASSWORD"
           requires:
-            - test_and_build
+            - test
           # Needed to trigger job also on git tag.
           filters:
             tags:
