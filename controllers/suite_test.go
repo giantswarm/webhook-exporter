@@ -31,6 +31,8 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -47,11 +49,14 @@ const (
 )
 
 var (
-	testEnv *envtest.Environment
-	ctx     context.Context
-	cancel  context.CancelFunc
+	cfg       *rest.Config
+	k8sClient *kubernetes.Clientset
+	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
 
 	timeout  = time.Second * 20
+	duration = time.Second * 10
 	interval = time.Millisecond * 250
 
 	replicas  int32 = 3
@@ -68,7 +73,7 @@ var _ = BeforeSuite(func() {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
+		ErrorIfCRDPathMissing: true,
 	}
 
 	cfg, err := testEnv.Start()

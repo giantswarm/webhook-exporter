@@ -41,13 +41,13 @@ var (
 			Subsystem: metricSubsystem,
 			Name:      "valid_namespace_selectors",
 			Help: `
-			   A metric showing the number of webhooks that a valid.
-			   That is webhooks that follow the folloing rules:
+			   A metric showing the number of webhooks that are valid.
+			   That is webhooks that follow the following rules:
 			     namespaceSelector:
 			       matchExpressions:
 			       - key: name
 			         operator: NotIn
-			         values: ["kube-system"]
+			         values: ["kube-system", "giantswarm"]
 			   `,
 		},
 		infoLabels,

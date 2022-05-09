@@ -39,10 +39,10 @@ func (collector Collector) CollectWebhookMetrics(
 		Namespace: namespace,
 		Name:      serviceName,
 	}, service)
-	log.Info("Found the following", "webhook", webhookName, "service", serviceName)
+	log.Info("Found the webhook service", "webhook", webhookName, "service", serviceName)
 
 	if err != nil {
-		collector.setValueOfAllMetrics(0)
+		collector.setValueOfAllMetricsToZero()
 
 		return err
 	}
@@ -141,8 +141,8 @@ func (c Collector) collectPDBMetrics(pdbs *policyv1.PodDisruptionBudgetList) {
 	}
 }
 
-func (c Collector) setValueOfAllMetrics(value float64) {
-	ValidNamespaceSelectors.WithLabelValues(c.Name, c.Kind).Set(value)
-	PodDisruptionBudgetInfo.WithLabelValues(c.Name, c.Kind).Set(value)
-	ReplicasInfo.WithLabelValues(c.Name, c.Kind).Set(value)
+func (c Collector) setValueOfAllMetricsToZero() {
+	ValidNamespaceSelectors.WithLabelValues(c.Name, c.Kind).Set(0)
+	PodDisruptionBudgetInfo.WithLabelValues(c.Name, c.Kind).Set(0)
+	ReplicasInfo.WithLabelValues(c.Name, c.Kind).Set(0)
 }

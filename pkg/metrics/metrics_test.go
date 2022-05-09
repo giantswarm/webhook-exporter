@@ -73,7 +73,5 @@ var _ = Describe("Metrics", func() {
 				Expect(3).To(Equal(testutil.CollectAndCount(validNamespaceSelectorsMetrics)))
 			})
 		})
-
 	})
-
 })
