@@ -23,6 +23,7 @@ workflows:
             tags:
               only: /^v.*/
           pre-steps:
+            - checkout
             - run:
                 command: make manifests && make generate && make envtest && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)"
 
