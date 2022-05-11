@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -66,10 +65,7 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
-	}
+	testEnv = &envtest.Environment{}
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
