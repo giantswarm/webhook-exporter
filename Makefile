@@ -67,7 +67,7 @@ prep-tests: manifests generate fmt vet envtest ## Do all the things needed to ru
 .PHONY: prep-ci-env
 prep-ci-env: 
 	$(shell echo "export ENVTEST='$(ENVTEST)'" >> $$BASH_ENV)
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)"
+	export KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)"
 	$(shell echo "export KUBEBUILDER_ASSETS='$(KUBEBUILDER_ASSETS)'" >> $$BASH_ENV)
 
 ##@ Build
