@@ -16,8 +16,10 @@ workflows:
             - checkout
             - run:
                 command: | 
+                  # go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+                  # echo 'export KUBEBUILDER_ASSETS="$(setup-envtest use 1.23 -p path)"' >> $BASH_ENV
                   CGO_ENABLED=0 make prep-tests
-                  echo 'export KUBEBUILDER_ASSETS="$(setup-envtest use 1.23 -p path)"' >> $BASH_ENV
+                  CGO_ENABLED=0 make prep-ci-env
 
       - architect/push-to-docker:
           context: "architect"
