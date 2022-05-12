@@ -3,19 +3,9 @@ version: 2.1
 orbs:
   architect: giantswarm/architect@4.17.0
 
-jobs:
-  test:
-    executor: architect/architect
-    steps:
-      - checkout
-      - run:
-          name: "Run tests"
-          command: CGO_ENABLED=0 make test
-
 workflows:
   build:
     jobs:
-      - test
       - architect/go-build:
           name: go-build
           binary: webhook-exporter
@@ -39,7 +29,7 @@ workflows:
           username_envar: "QUAY_USERNAME"
           password_envar: "QUAY_PASSWORD"
           requires:
-            - test
+            - go-build
           # Needed to trigger job als on git tag.
           filters:
             tags:
@@ -52,7 +42,7 @@ workflows:
           username_envar: "DOCKER_USERNAME"
           password_envar: "DOCKER_PASSWORD"
           requires:
-            - test
+            - go-build
           # Needed to trigger job also on git tag.
           filters:
             tags:
