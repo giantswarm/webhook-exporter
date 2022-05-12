@@ -15,8 +15,7 @@ workflows:
           pre-steps:
             - checkout
             - run:
-                command: | 
-                  CGO_ENABLED=0 make prep-ci-test-env
+                command: CGO_ENABLED=0 make prep-ci-test-env
 
       - architect/push-to-docker:
           context: "architect"
