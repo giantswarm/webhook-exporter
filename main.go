@@ -37,8 +37,8 @@ import (
 )
 
 var (
-	scheme             = runtime.NewScheme()
-	setupLog           = ctrl.Log.WithName("setup")
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
@@ -79,9 +79,7 @@ func main() {
 
 	if err = (&controllers.ValidatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-
-		Log: ctrl.Log.WithName("ValidatingWebhookExporter"),
+		Log:    ctrl.Log.WithName("ValidatingWebhookExporter"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ValidatingWebhookConfiguration")
 		os.Exit(1)
@@ -89,9 +87,7 @@ func main() {
 
 	if err = (&controllers.MutatingWebhookConfigurationReconciler{
 		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-
-		Log: ctrl.Log.WithName("MutatingWebhookExporter"),
+		Log:    ctrl.Log.WithName("MutatingWebhookExporter"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MutatingWebhookConfiguration")
 		os.Exit(1)

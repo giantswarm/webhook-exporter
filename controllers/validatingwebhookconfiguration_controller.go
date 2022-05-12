@@ -20,9 +20,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"

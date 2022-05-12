@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -31,8 +30,6 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -49,14 +46,11 @@ const (
 )
 
 var (
-	cfg       *rest.Config
-	k8sClient *kubernetes.Clientset
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
+	testEnv *envtest.Environment
+	ctx     context.Context
+	cancel  context.CancelFunc
 
 	timeout  = time.Second * 20
-	duration = time.Second * 10
 	interval = time.Millisecond * 250
 
 	replicas  int32 = 3
@@ -71,10 +65,7 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
-	}
+	testEnv = &envtest.Environment{}
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())

@@ -1,11 +1,12 @@
 package metrics_test
 
 import (
-	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+
+	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 )
 
 const kind = "test"
@@ -72,7 +73,5 @@ var _ = Describe("Metrics", func() {
 				Expect(3).To(Equal(testutil.CollectAndCount(validNamespaceSelectorsMetrics)))
 			})
 		})
-
 	})
-
 })

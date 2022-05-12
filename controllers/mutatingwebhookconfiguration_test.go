@@ -3,12 +3,13 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/giantswarm/webhook-exporter/pkg/metrics"
 	//+kubebuilder:scaffold:imports
 )
 

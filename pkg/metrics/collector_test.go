@@ -1,22 +1,18 @@
 package metrics
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	v1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -30,8 +26,6 @@ const (
 )
 
 var replicas int32 = 3
-var cfg *rest.Config
-var k8sClient client.Client
 var testEnv *envtest.Environment
 
 var _ = BeforeSuite(func() {
@@ -39,7 +33,7 @@ var _ = BeforeSuite(func() {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		ErrorIfCRDPathMissing: false,
 	}
 
 })
@@ -89,17 +83,6 @@ var _ = Describe("Collector", func() {
 	})
 
 })
-
-func getWebhook() v1.MutatingWebhook {
-	return v1.MutatingWebhook{
-		Name:                    "test.giantswarm.webhook",
-		ClientConfig:            v1.WebhookClientConfig{URL: new(string), Service: &v1.ServiceReference{}, CABundle: []byte{}},
-		Rules:                   []v1.RuleWithOperations{},
-		NamespaceSelector:       &metav1.LabelSelector{},
-		ObjectSelector:          &metav1.LabelSelector{},
-		AdmissionReviewVersions: []string{},
-	}
-}
 
 func getDeployments() appsv1.DeploymentList {
 	deployment := getDeployment()
@@ -179,15 +162,6 @@ func getMatchExpressions() metav1.LabelSelectorRequirement {
 		Operator: "NotIn",
 		Values:   []string{"kube-system", "giantswarm"},
 	}
-}
-
-func createDeployment(ctx context.Context, k8sclient kubernetes.Clientset) error {
-	deploymentsClient := k8sclient.AppsV1().Deployments(corev1.NamespaceDefault)
-	deployment := getDeployment()
-
-	_, err := deploymentsClient.Create(ctx, deployment, metav1.CreateOptions{})
-
-	return err
 }
 
 var _ = AfterSuite(func() {
