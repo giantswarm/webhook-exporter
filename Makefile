@@ -18,6 +18,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 export ENVTEST = $(shell pwd)/bin/setup-envtest
+export KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)"
 
 .PHONY: all
 all: build
@@ -67,8 +68,9 @@ prep-tests: manifests generate fmt vet envtest ## Do all the things needed to ru
 .PHONY: prep-ci-env
 prep-ci-env: 
 	$(shell echo "export ENVTEST='$(ENVTEST)'" >> $$BASH_ENV)
-	export KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)"
 	$(shell echo "export KUBEBUILDER_ASSETS='$(KUBEBUILDER_ASSETS)'" >> $$BASH_ENV)
+	@echo $(ENVTEST)
+	@echo $(KUBEBUILDER_ASSETS)
 
 ##@ Build
 
