@@ -20,6 +20,7 @@ workflows:
                   # echo 'export KUBEBUILDER_ASSETS="$(setup-envtest use 1.23 -p path)"' >> $BASH_ENV
                   CGO_ENABLED=0 make prep-tests
                   CGO_ENABLED=0 make prep-ci-env
+                  cat $BASH_ENV
 
       - architect/push-to-docker:
           context: "architect"
