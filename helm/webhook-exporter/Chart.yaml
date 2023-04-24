@@ -1,7 +1,9 @@
 apiVersion: v2
 name: webhook-exporter
 type: application
-description: "A prometheus exporter to monitor resilience of webhooks"
+description: A Prometheus exporter to monitor the resilience of webhooks
+home: https://github.com/giantswarm/webhook-exporter
+icon: https://s.giantswarm.io/app-icons/prometheus/1/light.svg
 version: [[ .Version ]]
 appVersion: "[[ .AppVersion ]]"
 annotations:
