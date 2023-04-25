@@ -75,4 +75,7 @@ require (
 replace (
 	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
 	github.com/dgrijalva/jwt-go => github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
+
+	// CVE-2022-29153
+	golang/github.com/hashicorp/consul/api v1.1.0 => golang/github.com/hashicorp/consul/api v1.15.2
 )
